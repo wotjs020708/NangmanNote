@@ -1,0 +1,112 @@
+# ─────────────────────────────────────────────────────────────
+# 낭만 노트 — .gitignore
+# 정책: workflow_ralph_github.md (memory)
+# ─────────────────────────────────────────────────────────────
+
+# ── macOS ──
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# ── Xcode 빌드 산출물 ──
+build/
+DerivedData/
+*.o
+*.dia
+*.hmap
+*.ipa
+*.app/
+*.dSYM.zip
+*.dSYM/
+*.xcarchive
+
+# ── Xcode 사용자 상태 (절대 공유 금지) ──
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.perspectivev3
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+
+# ── Swift Package Manager ──
+.build/
+.swiftpm/
+Packages/
+# Package.resolved 는 commit (재현 가능 빌드)
+
+# ── CocoaPods / Carthage (사용 안 함, 미래 대비) ──
+Pods/
+Carthage/Build/
+Carthage/Checkouts/
+
+# ── Fastlane (사용 안 함, 미래 대비) ──
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# ── 🔒 비밀 / 인증 / 키 (절대 금지) ──
+.env
+.env.*
+!.env.example
+Secrets.plist
+Secrets.swift
+**/APIKeys.swift
+**/APIKeys.plist
+*.p8
+*.p12
+*.pem
+*.cer
+*.mobileprovision
+*.certSigningRequest
+GoogleService-Info.plist
+Config.local.*
+*.key
+
+# ── IDE / 에디터 사용자 설정 ──
+*.user
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── 🤖 AI 도구 (세션·캐시·설정 모두 차단) ──
+.claude/
+.claude.json
+.claudeignore
+.omc/
+.cursor/
+.cursorrules
+.cursorignore
+.aider*
+.continue/
+.codeium/
+.windsurf/
+.cline/
+.roo/
+.zed/
+.specstory/
+.kilocode/
+.opencode/
+.copilot/
+.devin/
+*.ai-cache
+*.llm-cache
+
+# ── 기타 ──
+*.log
+*.tmp
+*.bak
+playground.xcworkspace
+timeline.xctimeline
