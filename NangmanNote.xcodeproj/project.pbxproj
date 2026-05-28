@@ -6,8 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		4BDFE1AA2FC82C350091BA9E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4B62696E2FC8207E00539B38 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4B6269752FC8207E00539B38;
+			remoteInfo = NangmanNote;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		4B6269762FC8207E00539B38 /* NangmanNote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NangmanNote.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4BDFE1A62FC82C350091BA9E /* NangmanNoteTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NangmanNoteTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +27,22 @@
 			path = NangmanNote;
 			sourceTree = "<group>";
 		};
+		4BDFE1A72FC82C350091BA9E /* NangmanNoteTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NangmanNoteTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		4B6269732FC8207E00539B38 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4BDFE1A32FC82C340091BA9E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				4B6269782FC8207E00539B38 /* NangmanNote */,
+				4BDFE1A72FC82C350091BA9E /* NangmanNoteTests */,
 				4B6269772FC8207E00539B38 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				4B6269762FC8207E00539B38 /* NangmanNote.app */,
+				4BDFE1A62FC82C350091BA9E /* NangmanNoteTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +95,29 @@
 			productReference = 4B6269762FC8207E00539B38 /* NangmanNote.app */;
 			productType = "com.apple.product-type.application";
 		};
+		4BDFE1A52FC82C340091BA9E /* NangmanNoteTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4BDFE1AE2FC82C350091BA9E /* Build configuration list for PBXNativeTarget "NangmanNoteTests" */;
+			buildPhases = (
+				4BDFE1A22FC82C340091BA9E /* Sources */,
+				4BDFE1A32FC82C340091BA9E /* Frameworks */,
+				4BDFE1A42FC82C340091BA9E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4BDFE1AB2FC82C350091BA9E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4BDFE1A72FC82C350091BA9E /* NangmanNoteTests */,
+			);
+			name = NangmanNoteTests;
+			packageProductDependencies = (
+			);
+			productName = NangmanNoteTests;
+			productReference = 4BDFE1A62FC82C350091BA9E /* NangmanNoteTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +130,10 @@
 				TargetAttributes = {
 					4B6269752FC8207E00539B38 = {
 						CreatedOnToolsVersion = 26.5;
+					};
+					4BDFE1A52FC82C340091BA9E = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = 4B6269752FC8207E00539B38;
 					};
 				};
 			};
@@ -100,12 +152,20 @@
 			projectRoot = "";
 			targets = (
 				4B6269752FC8207E00539B38 /* NangmanNote */,
+				4BDFE1A52FC82C340091BA9E /* NangmanNoteTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		4B6269742FC8207E00539B38 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4BDFE1A42FC82C340091BA9E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +182,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4BDFE1A22FC82C340091BA9E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4BDFE1AB2FC82C350091BA9E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4B6269752FC8207E00539B38 /* NangmanNote */;
+			targetProxy = 4BDFE1AA2FC82C350091BA9E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		4B62697F2FC8207F00539B38 /* Debug */ = {
@@ -310,6 +385,48 @@
 			};
 			name = Release;
 		};
+		4BDFE1AC2FC82C350091BA9E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = NZJWJ35U9D;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jaesuneo.NangmanNoteTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NangmanNote.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NangmanNote";
+			};
+			name = Debug;
+		};
+		4BDFE1AD2FC82C350091BA9E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = NZJWJ35U9D;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jaesuneo.NangmanNoteTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NangmanNote.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/NangmanNote";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -327,6 +444,15 @@
 			buildConfigurations = (
 				4B6269822FC8207F00539B38 /* Debug */,
 				4B6269832FC8207F00539B38 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4BDFE1AE2FC82C350091BA9E /* Build configuration list for PBXNativeTarget "NangmanNoteTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4BDFE1AC2FC82C350091BA9E /* Debug */,
+				4BDFE1AD2FC82C350091BA9E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
