@@ -30,16 +30,11 @@ final class CafeLookupService: CafeLookupServicing {
         let anchor = near.map { CLLocation(latitude: $0.latitude, longitude: $0.longitude) }
 
         let candidates = response.mapItems.prefix(maxResults).map { item -> CafeCandidate in
-            let coord = item.placemark.coordinate
-            let addressParts = [
-                item.placemark.thoroughfare,
-                item.placemark.subThoroughfare,
-                item.placemark.locality
-            ].compactMap { $0 }
-            let address = addressParts.isEmpty ? nil : addressParts.joined(separator: " ")
+            let coord = item.location.coordinate
+            let address = item.address.flatMap { $0.shortAddress ?? $0.fullAddress }
 
             let distance: CLLocationDistance? = anchor.map {
-                $0.distance(from: CLLocation(latitude: coord.latitude, longitude: coord.longitude))
+                $0.distance(from: item.location)
             }
 
             return CafeCandidate(
