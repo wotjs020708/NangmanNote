@@ -3,7 +3,7 @@ import SwiftUI
 struct RootView: View {
     var body: some View {
         TabView {
-            Text("컬렉션")
+            CollectionView()
                 .tabItem { Label("컬렉션", systemImage: "square.grid.2x2") }
             Text("지도")
                 .tabItem { Label("지도", systemImage: "map") }
@@ -11,8 +11,4 @@ struct RootView: View {
                 .tabItem { Label("설정", systemImage: "gear") }
         }
     }
-}
-
-#Preview {
-    RootView()
 }
