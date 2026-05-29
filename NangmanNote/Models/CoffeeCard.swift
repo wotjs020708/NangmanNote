@@ -21,6 +21,7 @@ final class CoffeeCard {
 
     // 앞면 배경 (M4)
     var frontBackgroundRaw: String = FrontBackgroundPreset.white.rawValue
+    var frontPhotoPath: String?
 
     var cafe: Cafe?
     @Relationship(inverse: \TastingNote.cards) var tastingNotes: [TastingNote] = []

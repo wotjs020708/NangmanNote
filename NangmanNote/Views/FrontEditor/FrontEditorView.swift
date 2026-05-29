@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import PhotosUI
 
 struct FrontEditorView: View {
     @Bindable var card: CoffeeCard
@@ -12,6 +13,8 @@ struct FrontEditorView: View {
     @State private var newTextColor: String = "#000000"
 
     @State private var canvasSize: CGSize = .zero
+    @State private var photoPickerItem: PhotosPickerItem?
+    @State private var loadError: String?
 
     var body: some View {
         NavigationStack {
@@ -44,8 +47,15 @@ struct FrontEditorView: View {
     private var preview: some View {
         GeometryReader { geo in
             ZStack {
-                card.frontBackground.background()
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                if let path = card.frontPhotoPath, let uiImage = ImageFileStore.loadFront(filename: path) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                } else {
+                    card.frontBackground.background()
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
 
                 ForEach(card.textLayers) { layer in
                     DraggableTextLayer(layer: layer, canvasSize: geo.size)
@@ -61,6 +71,8 @@ struct FrontEditorView: View {
                         .foregroundStyle(card.frontBackground.preferredTextColor.opacity(0.5))
                 }
             }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .onAppear { canvasSize = geo.size }
             .onChange(of: geo.size) { _, new in canvasSize = new }
         }
@@ -87,24 +99,80 @@ struct FrontEditorView: View {
 
     private var actionBar: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Button {
                     newTextContent = ""
                     newTextFont = .body
                     newTextColor = "#000000"
                     addingText = true
                 } label: {
-                    Label("텍스트 추가", systemImage: "textformat")
+                    Label("텍스트", systemImage: "textformat")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 4)
                 }
                 .buttonStyle(.borderedProminent)
+
+                PhotosPicker(selection: $photoPickerItem, matching: .images) {
+                    Label("사진 배경", systemImage: "photo.on.rectangle")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                }
+                .buttonStyle(.bordered)
+
+                if card.frontPhotoPath != nil {
+                    Button(role: .destructive) {
+                        removePhoto()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .padding(.vertical, 4)
+                            .padding(.horizontal, 8)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+
+            if let err = loadError {
+                Text(err).font(.caption).foregroundStyle(.red)
             }
 
             stickerPalette
         }
         .padding(.horizontal)
         .padding(.bottom, 12)
+        .onChange(of: photoPickerItem) { _, newItem in
+            guard let newItem else { return }
+            Task { await applyPhoto(newItem) }
+        }
+    }
+
+    private func applyPhoto(_ item: PhotosPickerItem) async {
+        loadError = nil
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self),
+                  let image = UIImage(data: data) else {
+                loadError = "이미지를 불러오지 못했습니다."
+                return
+            }
+            // 기존 사진이 있으면 삭제 후 새로 저장
+            if let old = card.frontPhotoPath {
+                ImageFileStore.deleteFront(filename: old)
+            }
+            if let filename = ImageFileStore.saveFront(image, for: card.id) {
+                card.frontPhotoPath = filename
+            } else {
+                loadError = "저장 실패"
+            }
+            await MainActor.run { photoPickerItem = nil }
+        } catch {
+            loadError = "앨범 접근 실패: \(error.localizedDescription)"
+        }
+    }
+
+    private func removePhoto() {
+        if let old = card.frontPhotoPath {
+            ImageFileStore.deleteFront(filename: old)
+            card.frontPhotoPath = nil
+        }
     }
 
     private var stickerPalette: some View {
