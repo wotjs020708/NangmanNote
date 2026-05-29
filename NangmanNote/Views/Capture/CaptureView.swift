@@ -88,6 +88,8 @@ struct CaptureView: View {
                 loadError = "이미지를 불러오지 못했습니다."
                 return
             }
+            // 동일 사진 재선택 시 onChange가 다시 발화하도록 리셋
+            await MainActor.run { pickerItem = nil }
             onPicked(image)
         } catch {
             loadError = "앨범 접근 실패: \(error.localizedDescription)"
