@@ -68,14 +68,40 @@ struct ParsingServiceTests {
         #expect(result.variety == nil)
     }
 
-    @Test func bbingtiger_detectsRedHoneyAndWashed() async throws {
-        // 본문에 RED HONEY와 WASHED 둘 다 있음. process 필드는 첫 매칭(긴 패턴 우선)
+    @Test func bbingtiger_isBlendIsTrue() async throws {
         let result = ParsingService.parseHeuristic(Self.bbingtigerOCR)
-        // redHoney 또는 washed 중 하나는 반드시 잡힘
-        #expect(result.process != nil)
+        #expect(result.isBlend == true)
+    }
+
+    @Test func bbingtiger_extractsTwoComponents() async throws {
+        let result = ParsingService.parseHeuristic(Self.bbingtigerOCR)
+        #expect(result.blendComponents.count == 2)
+
+        let ethiopia = result.blendComponents.first { $0.country == "Ethiopia" }
+        let colombia = result.blendComponents.first { $0.country == "Colombia" }
+
+        #expect(ethiopia != nil)
+        #expect(ethiopia?.ratio == 65)
+        #expect(ethiopia?.process == "redHoney")
+
+        #expect(colombia != nil)
+        #expect(colombia?.ratio == 35)
+        #expect(colombia?.process == "washed")
+    }
+
+    @Test func bbingtiger_singleProcessFieldIsNilForBlend() async throws {
+        // 블렌드일 때 단일 process 필드는 비움 (컴포넌트별로 들어감)
+        let result = ParsingService.parseHeuristic(Self.bbingtigerOCR)
+        #expect(result.process == nil)
     }
 
     // MARK: - 온두라스 (단일 원두)
+
+    @Test func honduras_isBlendIsFalse() async throws {
+        let result = ParsingService.parseHeuristic(Self.hondurasOCR)
+        #expect(result.isBlend == false)
+        #expect(result.blendComponents.isEmpty)
+    }
 
     @Test func honduras_extractsCountryRegionVariety() async throws {
         let result = ParsingService.parseHeuristic(Self.hondurasOCR)

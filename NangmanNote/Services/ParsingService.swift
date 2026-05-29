@@ -43,14 +43,23 @@ final class ParsingService: ParsingServicing {
     /// 패턴 매칭으로 카드 정보 추출. 실제 Foundation Models 교체 전까지 사용.
     /// 알려진 한계: 디자인 폰트로 깨진 큰 글씨는 못 잡음 (LLM이 본문에서 해석해야 함).
     static func parseHeuristic(_ text: String) -> ParsedCupNoteCard {
-        // 1) 블렌드 이름: "'XXX' 블렌드" 또는 본문 패턴
+        // 1) 블렌드 이름
         let blendName = extractBlendName(from: text)
 
-        // 2) 블렌드 컴포넌트로 블렌드 여부 판단
-        let components = extractBlendComponents(from: text)
-        let isBlend = blendName != nil || components.count >= 2
+        // 2) 블렌드 컴포넌트
+        let componentMatches = extractBlendComponents(from: text)
+        let parsedComponents: [ParsedBlendComponent] = componentMatches.map { match in
+            ParsedBlendComponent(
+                country: match.country,
+                region: nil,
+                variety: nil,
+                process: match.process,
+                ratio: match.ratio
+            )
+        }
+        let isBlend = blendName != nil || parsedComponents.count >= 2
 
-        // 3) 단일 원두 / 블렌드 분기
+        // 3) 단일 원두 분기
         var originCountry: String?
         var originRegion: String?
         var variety: String?
@@ -62,8 +71,8 @@ final class ParsingService: ParsingServicing {
             variety = extractVariety(from: text)
         }
 
-        // 4) 가공: 블렌드여도 본문에 명시되면 채움
-        if process == nil {
+        // 4) 가공: 블렌드여도 본문에 명시되면 채움 (단일 카드의 process 필드용)
+        if process == nil && !isBlend {
             process = extractProcess(from: text)
         }
 
@@ -81,7 +90,8 @@ final class ParsingService: ParsingServicing {
             process: process,
             roastLevel: roastLevel,
             tastingNotes: tastingNotes,
-            cafeName: nil
+            cafeName: nil,
+            blendComponents: parsedComponents
         )
     }
 
