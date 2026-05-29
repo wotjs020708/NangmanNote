@@ -7,7 +7,7 @@ struct RootView: View {
                 .tabItem { Label("컬렉션", systemImage: "square.grid.2x2") }
             MapTabView()
                 .tabItem { Label("지도", systemImage: "map") }
-            Text("설정")
+            SettingsView()
                 .tabItem { Label("설정", systemImage: "gear") }
         }
     }
