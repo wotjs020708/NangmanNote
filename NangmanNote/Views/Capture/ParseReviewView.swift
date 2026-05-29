@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ParseReviewView: View {
     @State var viewModel: ParseReviewViewModel
+    @State private var showingOCRRaw = false
     let onSaved: () -> Void
     let onSwitchToManual: () -> Void
 
@@ -64,6 +65,35 @@ struct ParseReviewView: View {
                             .foregroundStyle(viewModel.confidence < 0.5 ? .orange : .secondary)
                             .font(.footnote.monospacedDigit())
                     }
+                }
+            }
+
+            if !viewModel.ocrRawText.isEmpty {
+                Section {
+                    DisclosureGroup(isExpanded: $showingOCRRaw) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Label("\(viewModel.ocrBlockCount) blocks", systemImage: "doc.text.magnifyingglass")
+                                Spacer()
+                                Text("avg \(Int(viewModel.ocrAvgConfidence * 100))%")
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                            }
+                            .font(.caption)
+
+                            Text(viewModel.ocrRawText)
+                                .font(.system(.caption, design: .monospaced))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .textSelection(.enabled)
+                        }
+                        .padding(.vertical, 4)
+                    } label: {
+                        Label("Vision OCR 원문 (디버그)", systemImage: "text.viewfinder")
+                            .font(.subheadline)
+                    }
+                } footer: {
+                    Text("OCR이 텍스트를 잘 잡았는데 폼이 비어 있다면, 파서(현재 Mock — #2에서 Foundation Models로 교체)가 원인입니다.")
+                        .font(.caption2)
                 }
             }
         }
