@@ -19,6 +19,9 @@ final class CoffeeCard {
     var processRaw: String?
     var roastLevelRaw: String?
 
+    // 앞면 배경 (M4)
+    var frontBackgroundRaw: String = FrontBackgroundPreset.white.rawValue
+
     var cafe: Cafe?
     @Relationship(inverse: \TastingNote.cards) var tastingNotes: [TastingNote] = []
     @Relationship(deleteRule: .cascade, inverse: \BlendComponent.card) var blendComponents: [BlendComponent] = []
@@ -50,6 +53,11 @@ final class CoffeeCard {
     var roastLevel: RoastLevel? {
         get { roastLevelRaw.flatMap(RoastLevel.init(rawValue:)) }
         set { roastLevelRaw = newValue?.rawValue }
+    }
+
+    var frontBackground: FrontBackgroundPreset {
+        get { FrontBackgroundPreset(rawValue: frontBackgroundRaw) ?? .white }
+        set { frontBackgroundRaw = newValue.rawValue }
     }
 
     var displayName: String {

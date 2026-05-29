@@ -4,6 +4,7 @@ import SwiftData
 struct CardDetailView: View {
     @Bindable var card: CoffeeCard
     @State private var showingFront = false  // 첫 진입: 뒷면(AI 정보) 표시
+    @State private var showingFrontEditor = false
 
     var body: some View {
         ScrollView {
@@ -28,6 +29,18 @@ struct CardDetailView: View {
         }
         .navigationTitle(card.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showingFrontEditor = true
+                } label: {
+                    Label("앞면 꾸미기", systemImage: "paintbrush.pointed")
+                }
+            }
+        }
+        .sheet(isPresented: $showingFrontEditor) {
+            FrontEditorView(card: card)
+        }
     }
 
     private var ratingRow: some View {
