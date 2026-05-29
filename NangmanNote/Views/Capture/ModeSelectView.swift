@@ -51,6 +51,7 @@ struct ModeSelectView: View {
             }
             .navigationDestination(for: CapturedSelection.self) { selection in
                 destinationView(for: selection)
+                    .id(selection.id)
             }
         }
     }
