@@ -3,6 +3,7 @@ import SwiftUI
 struct CafeMiniSheet: View {
     let summary: MapTabView.CafeSummary
     @Environment(\.dismiss) private var dismiss
+    @State private var editingLocation = false
 
     var body: some View {
         NavigationStack {
@@ -17,12 +18,23 @@ struct CafeMiniSheet: View {
             .navigationTitle(summary.cafe.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        editingLocation = true
+                    } label: {
+                        Image(systemName: "pencil.circle")
+                    }
+                    .accessibilityLabel("위치 편집")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("닫기") { dismiss() }
                 }
             }
             .navigationDestination(for: CoffeeCard.self) { card in
                 CardDetailView(card: card)
+            }
+            .sheet(isPresented: $editingLocation) {
+                CafeLocationEditSheet(cafe: summary.cafe)
             }
         }
         .presentationDetents([.medium, .large])
