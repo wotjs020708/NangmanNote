@@ -51,7 +51,11 @@ struct FrontEditorView: View {
                     DraggableTextLayer(layer: layer, canvasSize: geo.size)
                 }
 
-                if card.textLayers.isEmpty {
+                ForEach(card.stickerLayers) { sticker in
+                    DraggableSticker(sticker: sticker, canvasSize: geo.size)
+                }
+
+                if card.textLayers.isEmpty && card.stickerLayers.isEmpty {
                     Text("탭으로 텍스트·이모지 추가")
                         .font(.caption)
                         .foregroundStyle(card.frontBackground.preferredTextColor.opacity(0.5))
@@ -82,21 +86,54 @@ struct FrontEditorView: View {
     }
 
     private var actionBar: some View {
-        HStack(spacing: 12) {
-            Button {
-                newTextContent = ""
-                newTextFont = .body
-                newTextColor = "#000000"
-                addingText = true
-            } label: {
-                Label("텍스트 추가", systemImage: "textformat")
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                Button {
+                    newTextContent = ""
+                    newTextFont = .body
+                    newTextColor = "#000000"
+                    addingText = true
+                } label: {
+                    Label("텍스트 추가", systemImage: "textformat")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                }
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.borderedProminent)
+
+            stickerPalette
         }
         .padding(.horizontal)
         .padding(.bottom, 12)
+    }
+
+    private var stickerPalette: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("이모지 (탭으로 추가)")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(StickerPreset.palette, id: \.self) { emoji in
+                        Text(emoji)
+                            .font(.system(size: 28))
+                            .frame(width: 44, height: 44)
+                            .background(Color.gray.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .onTapGesture {
+                                addSticker(emoji)
+                            }
+                    }
+                }
+            }
+        }
+    }
+
+    private func addSticker(_ emoji: String) {
+        let sticker = StickerLayer(emoji: emoji)
+        sticker.card = card
+        card.stickerLayers.append(sticker)
+        context.insert(sticker)
     }
 
     private func presetSwatch(_ preset: FrontBackgroundPreset) -> some View {
@@ -181,6 +218,47 @@ struct FrontEditorView: View {
                 }
             }
         }
+    }
+}
+
+private struct DraggableSticker: View {
+    @Bindable var sticker: StickerLayer
+    let canvasSize: CGSize
+    @Environment(\.modelContext) private var context
+    @State private var dragOffset: CGSize = .zero
+    @State private var showingDelete = false
+
+    var body: some View {
+        Text(sticker.emoji)
+            .font(.system(size: 36))
+            .position(
+                x: sticker.positionX * canvasSize.width + dragOffset.width,
+                y: sticker.positionY * canvasSize.height + dragOffset.height
+            )
+            .gesture(
+                DragGesture()
+                    .onChanged { dragOffset = $0.translation }
+                    .onEnded { value in
+                        let nx = (sticker.positionX * canvasSize.width + value.translation.width) / canvasSize.width
+                        let ny = (sticker.positionY * canvasSize.height + value.translation.height) / canvasSize.height
+                        sticker.positionX = min(max(nx, 0.05), 0.95)
+                        sticker.positionY = min(max(ny, 0.05), 0.95)
+                        dragOffset = .zero
+                    }
+            )
+            .onLongPressGesture(minimumDuration: 0.5) {
+                showingDelete = true
+            }
+            .confirmationDialog("이모지 삭제하시겠습니까?", isPresented: $showingDelete) {
+                Button("삭제", role: .destructive) {
+                    if let card = sticker.card,
+                       let idx = card.stickerLayers.firstIndex(where: { $0.id == sticker.id }) {
+                        card.stickerLayers.remove(at: idx)
+                    }
+                    context.delete(sticker)
+                }
+                Button("취소", role: .cancel) {}
+            }
     }
 }
 

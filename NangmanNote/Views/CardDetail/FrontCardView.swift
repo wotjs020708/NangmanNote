@@ -10,7 +10,7 @@ struct FrontCardView: View {
                 card.frontBackground.background()
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 
-                if card.textLayers.isEmpty {
+                if card.textLayers.isEmpty && card.stickerLayers.isEmpty {
                     placeholderContent
                 }
 
@@ -21,6 +21,15 @@ struct FrontCardView: View {
                         .position(
                             x: layer.positionX * geo.size.width,
                             y: layer.positionY * geo.size.height
+                        )
+                }
+
+                ForEach(card.stickerLayers) { sticker in
+                    Text(sticker.emoji)
+                        .font(.system(size: 36))
+                        .position(
+                            x: sticker.positionX * geo.size.width,
+                            y: sticker.positionY * geo.size.height
                         )
                 }
             }
