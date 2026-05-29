@@ -4,6 +4,7 @@ import UIKit
 /// 뒷면 — 카드의 객관 정보. AI 추출/사용자 편집 결과.
 struct BackCardView: View {
     let card: CoffeeCard
+    var onTapNote: ((String) -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -90,6 +91,8 @@ struct BackCardView: View {
                         .background(Color.accentColor.opacity(0.12))
                         .foregroundStyle(.tint)
                         .clipShape(Capsule())
+                        .contentShape(Capsule())
+                        .onTapGesture { onTapNote?(note.label) }
                 }
             }
         }
