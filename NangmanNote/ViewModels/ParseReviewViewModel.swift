@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import Observation
+import OSLog
 
 @Observable
 @MainActor
@@ -15,6 +16,11 @@ final class ParseReviewViewModel {
     var stage: Stage = .processing
     var processedImage: UIImage?
     var confidence: Double = 0
+
+    // 디버그 노출용
+    var ocrRawText: String = ""
+    var ocrBlockCount: Int = 0
+    var ocrAvgConfidence: Double = 0
 
     var blendName: String = ""
     var originCountry: String = ""
@@ -51,6 +57,7 @@ final class ParseReviewViewModel {
         stage = .processing
         do {
             guard let processed = await preprocessor.process(originalImage) else {
+                Logger.ocr.error("ImagePreprocessor returned nil for input image \(self.originalImage.size.debugDescription, privacy: .public)")
                 stage = .failed("이미지 전처리 실패")
                 return
             }
@@ -58,8 +65,20 @@ final class ParseReviewViewModel {
 
             let blocks = try await ocr.recognize(processed)
             let text = blocks.joinedText()
+            let avg: Double = blocks.isEmpty
+                ? 0
+                : Double(blocks.map(\.confidence).reduce(0, +)) / Double(blocks.count)
 
+            ocrRawText = text
+            ocrBlockCount = blocks.count
+            ocrAvgConfidence = avg
+
+            Logger.ocr.info("OCR done — blocks=\(blocks.count, privacy: .public), avgConfidence=\(String(format: "%.2f", avg), privacy: .public), textLen=\(text.count, privacy: .public)")
+            Logger.ocr.debug("OCR text: \(text, privacy: .public)")
+
+            Logger.parsing.info("Parser invoked with text (first 200 chars): \(text.prefix(200), privacy: .public)")
             let parsed = try await parser.parse(ocrText: text)
+            Logger.parsing.info("Parser result — blendName=\(parsed.blendName ?? "nil", privacy: .public), country=\(parsed.originCountry ?? "nil", privacy: .public), region=\(parsed.originRegion ?? "nil", privacy: .public), variety=\(parsed.variety ?? "nil", privacy: .public), tastingNotes=\(parsed.tastingNotes.joined(separator: ", "), privacy: .public)")
 
             if let service = parser as? ParsingService {
                 confidence = service.computeConfidence(ocr: blocks, parsed: parsed)
@@ -70,6 +89,7 @@ final class ParseReviewViewModel {
             applyParsed(parsed)
             stage = .ready
         } catch {
+            Logger.parsing.error("Pipeline failed: \(error.localizedDescription, privacy: .public)")
             stage = .failed(error.localizedDescription)
         }
     }
