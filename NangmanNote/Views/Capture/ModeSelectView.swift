@@ -72,18 +72,13 @@ struct ModeSelectView: View {
                 }
             )
         } else {
-            VStack(spacing: 16) {
-                Image(uiImage: selection.image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 280)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                Text("수동 모드 화면은 #17 에서 추가됩니다.")
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-            .navigationTitle("수동 입력")
-            .navigationBarTitleDisplayMode(.inline)
+            ManualEntryView(
+                viewModel: ManualEntryViewModel(
+                    image: selection.image,
+                    cardStore: cardStore
+                ),
+                onSaved: { dismiss() }
+            )
         }
     }
 }
