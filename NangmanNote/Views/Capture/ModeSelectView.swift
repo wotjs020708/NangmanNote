@@ -1,11 +1,13 @@
 import SwiftUI
+import UIKit
 
 struct ModeSelectView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var captureMode: InputMode?
+    @Environment(CardStore.self) private var cardStore
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             VStack(spacing: 16) {
                 Spacer()
 
@@ -15,7 +17,7 @@ struct ModeSelectView: View {
                     iconName: "wand.and.stars",
                     color: .accentColor
                 ) {
-                    captureMode = .auto
+                    path.append(InputMode.auto)
                 }
 
                 ModeCard(
@@ -24,7 +26,7 @@ struct ModeSelectView: View {
                     iconName: "square.and.pencil",
                     color: .orange
                 ) {
-                    captureMode = .manual
+                    path.append(InputMode.manual)
                 }
 
                 Spacer()
@@ -42,15 +44,57 @@ struct ModeSelectView: View {
                     Button("취소") { dismiss() }
                 }
             }
-            .fullScreenCover(item: $captureMode) { mode in
-                CaptureView(mode: mode) { _ in
-                    // M2.3/M2.4 (#16/#17)에서 ParseReview/ManualEntry로 연결 예정
-                    captureMode = nil
-                    dismiss()
+            .navigationDestination(for: InputMode.self) { mode in
+                CaptureView(mode: mode) { image in
+                    path.append(CapturedSelection(image: image, mode: mode))
                 }
+            }
+            .navigationDestination(for: CapturedSelection.self) { selection in
+                destinationView(for: selection)
             }
         }
     }
+
+    @ViewBuilder
+    private func destinationView(for selection: CapturedSelection) -> some View {
+        if selection.mode == .auto {
+            ParseReviewView(
+                viewModel: ParseReviewViewModel(
+                    image: selection.image,
+                    preprocessor: ImagePreprocessor(),
+                    ocr: OCRService(),
+                    parser: ParsingService(),
+                    cardStore: cardStore
+                ),
+                onSaved: { dismiss() },
+                onSwitchToManual: {
+                    path.append(CapturedSelection(image: selection.image, mode: .manual))
+                }
+            )
+        } else {
+            VStack(spacing: 16) {
+                Image(uiImage: selection.image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 280)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                Text("수동 모드 화면은 #17 에서 추가됩니다.")
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .navigationTitle("수동 입력")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+struct CapturedSelection: Hashable {
+    let id: UUID = UUID()
+    let image: UIImage
+    let mode: InputMode
+
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
 
 extension InputMode: Identifiable {
