@@ -8,6 +8,13 @@ struct MapTabView: View {
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var selectedCafeID: PersistentIdentifier?
 
+    private var selectedSummary: Binding<CafeSummary?> {
+        Binding(
+            get: { cafeSummaries.first(where: { $0.id == selectedCafeID }) },
+            set: { selectedCafeID = $0?.id }
+        )
+    }
+
     var body: some View {
         NavigationStack {
             mapContent
@@ -33,6 +40,9 @@ struct MapTabView: View {
                 }
                 .navigationDestination(for: CoffeeCard.self) { card in
                     CardDetailView(card: card)
+                }
+                .sheet(item: selectedSummary) { summary in
+                    CafeMiniSheet(summary: summary)
                 }
         }
         .onAppear { fitAll() }
