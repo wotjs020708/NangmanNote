@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ModeSelectView: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var captureMode: InputMode?
 
     var body: some View {
         NavigationStack {
@@ -14,7 +15,7 @@ struct ModeSelectView: View {
                     iconName: "wand.and.stars",
                     color: .accentColor
                 ) {
-                    // M2.2 #15: CaptureView(.auto)로 전환 예정
+                    captureMode = .auto
                 }
 
                 ModeCard(
@@ -23,7 +24,7 @@ struct ModeSelectView: View {
                     iconName: "square.and.pencil",
                     color: .orange
                 ) {
-                    // M2.4 #17: ManualEntryView로 전환 예정
+                    captureMode = .manual
                 }
 
                 Spacer()
@@ -41,8 +42,19 @@ struct ModeSelectView: View {
                     Button("취소") { dismiss() }
                 }
             }
+            .fullScreenCover(item: $captureMode) { mode in
+                CaptureView(mode: mode) { _ in
+                    // M2.3/M2.4 (#16/#17)에서 ParseReview/ManualEntry로 연결 예정
+                    captureMode = nil
+                    dismiss()
+                }
+            }
         }
     }
+}
+
+extension InputMode: Identifiable {
+    public var id: String { rawValue }
 }
 
 private struct ModeCard: View {
