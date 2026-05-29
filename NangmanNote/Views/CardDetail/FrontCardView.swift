@@ -7,8 +7,16 @@ struct FrontCardView: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                card.frontBackground.background()
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                if let path = card.frontPhotoPath, let uiImage = ImageFileStore.loadFront(filename: path) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                } else {
+                    card.frontBackground.background()
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
 
                 if card.textLayers.isEmpty && card.stickerLayers.isEmpty {
                     placeholderContent
