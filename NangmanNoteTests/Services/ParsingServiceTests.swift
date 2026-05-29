@@ -147,6 +147,57 @@ struct ParsingServiceTests {
         #expect(result.tastingNotes.count >= 2)
     }
 
+    // MARK: - 블렌드 이름 따옴표 변형
+
+    @Test func blendName_smartSingleQuotes() {
+        let text = "\u{2018}오렌지 데일리\u{2019} 블렌드는 상큼한 맛으로 시작됩니다."
+        let result = ParsingService.parseHeuristic(text)
+        #expect(result.blendName == "오렌지 데일리")
+    }
+
+    @Test func blendName_smartDoubleQuotes() {
+        let text = "\u{201C}모닝 클래식\u{201D} 블렌드는 부드러운 향을 갖습니다."
+        let result = ParsingService.parseHeuristic(text)
+        #expect(result.blendName == "모닝 클래식")
+    }
+
+    @Test func blendName_backtick() {
+        let text = "`커피 데이` 블렌드는 균형감이 좋습니다."
+        let result = ParsingService.parseHeuristic(text)
+        #expect(result.blendName == "커피 데이")
+    }
+
+    @Test func blendName_multilineQuotes() {
+        // 따옴표 사이에 줄바꿈 포함 (Vision OCR이 줄 단위로 자르는 경우)
+        let text = "'이런 편안한 휴식,\n얼마나 오렌지' 블렌드는 향긋합니다."
+        let result = ParsingService.parseHeuristic(text)
+        #expect(result.blendName?.contains("이런 편안한 휴식") == true)
+        #expect(result.blendName?.contains("얼마나 오렌지") == true)
+    }
+
+    @Test func blendName_noQuotesFallback() {
+        let text = "이번 시즌의 햇살 블렌드는 부드럽고 달콤합니다."
+        let result = ParsingService.parseHeuristic(text)
+        #expect(result.blendName?.contains("햇살") == true)
+    }
+
+    @Test func blendName_previousLineFallback() {
+        // 블렌드 단어만 다음 줄에
+        let text = """
+        스페셜 모카 시그니처
+        블렌드는 진한 초콜릿 풍미를 가집니다.
+        """
+        let result = ParsingService.parseHeuristic(text)
+        #expect(result.blendName == "스페셜 모카 시그니처")
+    }
+
+    @Test func blendName_trivialWordsExcluded() {
+        // 너무 일반적인 단어 단독은 제외
+        let text = "블렌드는 좋습니다."
+        let result = ParsingService.parseHeuristic(text)
+        #expect(result.blendName == nil)
+    }
+
     // MARK: - 엣지 케이스
 
     @Test func empty_throws() async {

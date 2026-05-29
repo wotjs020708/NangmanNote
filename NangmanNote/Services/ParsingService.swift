@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import OSLog
 
 enum ParsingError: Error, LocalizedError {
     case modelUnavailable
@@ -97,32 +98,106 @@ final class ParsingService: ParsingServicing {
 
     // MARK: - 패턴 추출
 
-    private static let quotePairs: [(String, String)] = [("'", "'"), ("'", "'"), ("\"", "\"")]
+    /// OCR이 인식할 수 있는 모든 따옴표/괄호 변형. 시작/끝 구분 없이 통합.
+    /// Vision이 한국어 카드 디자인 따옴표를 어떤 코드포인트로 잡든 매칭하기 위함.
+    private static let allQuoteChars: String = {
+        let chars = [
+            "'", "'", "'",          // U+0027, U+2018, U+2019
+            "\"", "\u{201C}", "\u{201D}",   // ASCII + smart double
+            "`", "´",                   // U+0060, U+00B4
+            "「", "」", "『", "』",       // 일본/한국 디자인 카드
+            "《", "》", "〈", "〉"         // 추가 변형
+        ]
+        return chars.joined()
+    }()
+
+    /// 블렌드 이름 길이 허용 범위 (단어 단위 합쳤을 때)
+    private static let blendNameMinLength = 4
+    private static let blendNameMaxLength = 60
+
+    /// 따옴표/괄호 페어. character class 대신 페어별 명시 시도 (multi-byte 안정성).
+    private static let quotePairs: [(open: String, close: String)] = [
+        ("'", "'"),
+        ("\u{2018}", "\u{2019}"),
+        ("\"", "\""),
+        ("\u{201C}", "\u{201D}"),
+        ("`", "`"),
+        ("´", "´"),
+        ("「", "」"),
+        ("『", "』"),
+        ("《", "》"),
+        ("〈", "〉")
+    ]
 
     private static func extractBlendName(from text: String) -> String? {
-        // "'XXX' 블렌드" 또는 'XXX' 블렌드는
+        // 패턴 A: 각 따옴표/괄호 페어를 차례로 시도 (개행 포함 매칭)
         for (open, close) in quotePairs {
-            let pattern = "\(open)([^\(close)]+?)\(close)\\s*블렌드"
-            if let regex = try? NSRegularExpression(pattern: pattern),
-               let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
-               let range = Range(match.range(at: 1), in: text) {
-                let name = String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)
-                if !name.isEmpty { return name }
+            let openEsc = NSRegularExpression.escapedPattern(for: open)
+            let closeEsc = NSRegularExpression.escapedPattern(for: close)
+            let pattern = "\(openEsc)([^\(closeEsc)]{4,80}?)\(closeEsc)[\\s\\n]*블렌드"
+            if let raw = match(pattern: pattern, in: text, captureGroup: 1, dotAll: true) {
+                Logger.parsing.debug("blendName matched by pattern A (\(open, privacy: .public)…\(close, privacy: .public)): \(raw, privacy: .public)")
+                return raw
             }
         }
-        // 가짜 따옴표 없이 "XXX 블렌드는"
-        let plain = #"([\p{L}\s,·]+?)\s*블렌드[는은이가]"#
-        if let regex = try? NSRegularExpression(pattern: plain),
-           let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
-           let range = Range(match.range(at: 1), in: text) {
-            let candidate = String(text[range])
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            // 너무 짧거나 너무 긴 후보 제외
-            if candidate.count >= 4 && candidate.count <= 40 {
-                return candidate
+
+        // 패턴 B: 따옴표 없이 — "블렌드[는은이가의를이라]" 앞의 텍스트
+        // 마침표/줄바꿈/콜론으로 끊은 직전 구간
+        let patternB = #"([^.!?\n:;]{4,80})\s*블렌드[는은이가의를이라]"#
+        if let raw = match(pattern: patternB, in: text, captureGroup: 1, dotAll: false) {
+            let cleaned = stripLeadingQuotesIfAny(raw)
+            Logger.parsing.debug("blendName matched by pattern B (no-quote): \(cleaned, privacy: .public)")
+            return cleaned
+        }
+
+        // 패턴 C: "블렌드" 단어 자체만 본문에 있을 때 — 직전 줄에서 후보 추출
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        for (idx, line) in lines.enumerated() where line.contains("블렌드") {
+            if idx > 0 {
+                let candidate = stripLeadingQuotesIfAny(
+                    lines[idx - 1].trimmingCharacters(in: .whitespacesAndNewlines)
+                )
+                if isValidBlendName(candidate) {
+                    Logger.parsing.debug("blendName matched by pattern C (previous-line): \(candidate, privacy: .public)")
+                    return candidate
+                }
             }
         }
+
+        Logger.parsing.debug("blendName extraction failed for text length=\(text.count, privacy: .public)")
         return nil
+    }
+
+    private static func match(pattern: String, in text: String, captureGroup: Int, dotAll: Bool) -> String? {
+        var options: NSRegularExpression.Options = []
+        if dotAll { options.insert(.dotMatchesLineSeparators) }
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: options),
+              let m = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let range = Range(m.range(at: captureGroup), in: text) else {
+            return nil
+        }
+        let raw = String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isValidBlendName(raw) else { return nil }
+        return raw
+    }
+
+    private static func isValidBlendName(_ s: String) -> Bool {
+        let count = s.count
+        guard count >= blendNameMinLength && count <= blendNameMaxLength else { return false }
+        // 너무 일반적인 단어 단독 제외 (방어)
+        let trivial: Set<String> = ["블렌드", "원두", "커피", "Coffee", "Blend"]
+        return !trivial.contains(s)
+    }
+
+    private static func stripLeadingQuotesIfAny(_ s: String) -> String {
+        var result = s
+        while let first = result.first, allQuoteChars.contains(first) {
+            result.removeFirst()
+        }
+        while let last = result.last, allQuoteChars.contains(last) {
+            result.removeLast()
+        }
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     struct BlendComponentMatch {
