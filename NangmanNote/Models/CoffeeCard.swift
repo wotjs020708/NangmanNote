@@ -26,6 +26,7 @@ final class CoffeeCard {
     @Relationship(inverse: \TastingNote.cards) var tastingNotes: [TastingNote] = []
     @Relationship(deleteRule: .cascade, inverse: \BlendComponent.card) var blendComponents: [BlendComponent] = []
     @Relationship(deleteRule: .cascade, inverse: \TextLayer.card) var textLayers: [TextLayer] = []
+    @Relationship(deleteRule: .cascade, inverse: \StickerLayer.card) var stickerLayers: [StickerLayer] = []
 
     init(
         id: UUID = UUID(),
