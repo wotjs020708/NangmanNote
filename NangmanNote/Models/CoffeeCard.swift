@@ -21,6 +21,7 @@ final class CoffeeCard {
 
     var cafe: Cafe?
     @Relationship(inverse: \TastingNote.cards) var tastingNotes: [TastingNote] = []
+    @Relationship(deleteRule: .cascade, inverse: \BlendComponent.card) var blendComponents: [BlendComponent] = []
 
     init(
         id: UUID = UUID(),

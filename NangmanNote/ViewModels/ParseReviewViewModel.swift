@@ -22,6 +22,10 @@ final class ParseReviewViewModel {
     var ocrBlockCount: Int = 0
     var ocrAvgConfidence: Double = 0
 
+    // 카드 유형 (자동 감지 → 사용자 override 가능)
+    var isBlend: Bool = false
+
+    // 단일 원두 필드
     var blendName: String = ""
     var originCountry: String = ""
     var originRegion: String = ""
@@ -31,6 +35,10 @@ final class ParseReviewViewModel {
     var tastingNotesText: String = ""
     var cafeName: String = ""
 
+    // 블렌드 컴포넌트
+    var blendComponents: [ParsedBlendComponent] = []
+
+    // 사용자 기록
     var userMemo: String = ""
     var userRating: Int = 0
 
@@ -57,7 +65,7 @@ final class ParseReviewViewModel {
         stage = .processing
         do {
             guard let processed = await preprocessor.process(originalImage) else {
-                Logger.ocr.error("ImagePreprocessor returned nil for input image \(self.originalImage.size.debugDescription, privacy: .public)")
+                Logger.ocr.error("ImagePreprocessor returned nil")
                 stage = .failed("이미지 전처리 실패")
                 return
             }
@@ -78,7 +86,7 @@ final class ParseReviewViewModel {
 
             Logger.parsing.info("Parser invoked with text (first 200 chars): \(text.prefix(200), privacy: .public)")
             let parsed = try await parser.parse(ocrText: text)
-            Logger.parsing.info("Parser result — blendName=\(parsed.blendName ?? "nil", privacy: .public), country=\(parsed.originCountry ?? "nil", privacy: .public), region=\(parsed.originRegion ?? "nil", privacy: .public), variety=\(parsed.variety ?? "nil", privacy: .public), tastingNotes=\(parsed.tastingNotes.joined(separator: ", "), privacy: .public)")
+            Logger.parsing.info("Parser result — isBlend=\(parsed.isBlend, privacy: .public), blendName=\(parsed.blendName ?? "nil", privacy: .public), components=\(parsed.blendComponents.count, privacy: .public), tastingNotes=\(parsed.tastingNotes.joined(separator: ", "), privacy: .public)")
 
             if let service = parser as? ParsingService {
                 confidence = service.computeConfidence(ocr: blocks, parsed: parsed)
@@ -95,6 +103,7 @@ final class ParseReviewViewModel {
     }
 
     private func applyParsed(_ parsed: ParsedCupNoteCard) {
+        isBlend = parsed.isBlend
         blendName = parsed.blendName ?? ""
         originCountry = parsed.originCountry ?? ""
         originRegion = parsed.originRegion ?? ""
@@ -103,6 +112,7 @@ final class ParseReviewViewModel {
         roastLevel = parsed.roastLevel ?? ""
         tastingNotesText = parsed.tastingNotes.joined(separator: ", ")
         cafeName = parsed.cafeName ?? ""
+        blendComponents = parsed.blendComponents
     }
 
     @discardableResult
@@ -110,11 +120,29 @@ final class ParseReviewViewModel {
         guard case .ready = stage else { return false }
 
         let card = CoffeeCard(backImagePath: "", inputMode: .auto)
-        card.blendName = nilIfEmpty(blendName)
-        card.originCountry = nilIfEmpty(originCountry)
-        card.originRegion = nilIfEmpty(originRegion)
-        card.variety = nilIfEmpty(variety)
-        card.processRaw = nilIfEmpty(process)
+
+        if isBlend {
+            card.blendName = nilIfEmpty(blendName)
+            // 단일 원두 필드는 비움 (블렌드 카드)
+            for comp in blendComponents {
+                let bc = BlendComponent(
+                    country: comp.country,
+                    region: comp.region,
+                    variety: comp.variety,
+                    process: comp.process.flatMap(ProcessMethod.init(rawValue:)),
+                    ratio: comp.ratio
+                )
+                bc.card = card
+                card.blendComponents.append(bc)
+            }
+        } else {
+            // 단일 원두
+            card.originCountry = nilIfEmpty(originCountry)
+            card.originRegion = nilIfEmpty(originRegion)
+            card.variety = nilIfEmpty(variety)
+            card.processRaw = nilIfEmpty(process)
+        }
+
         card.roastLevelRaw = nilIfEmpty(roastLevel)
         card.userMemo = nilIfEmpty(userMemo)
         card.userRating = userRating > 0 ? userRating : nil

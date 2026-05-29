@@ -39,12 +39,52 @@ struct ParseReviewView: View {
                 }
 
             case .ready:
-                Section("추출된 정보") {
-                    fieldRow("원두/블렌드", $viewModel.blendName, lowConfidence: viewModel.confidence < 0.5)
-                    fieldRow("산지(국가)", $viewModel.originCountry, lowConfidence: viewModel.confidence < 0.5)
-                    fieldRow("산지(지역/농장)", $viewModel.originRegion)
-                    fieldRow("품종", $viewModel.variety)
-                    fieldRow("가공", $viewModel.process)
+                Section {
+                    Picker("유형", selection: $viewModel.isBlend) {
+                        Text("단일 원두").tag(false)
+                        Text("블렌드").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("카드 유형")
+                } footer: {
+                    Text(autoDetectedHint)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                if viewModel.isBlend {
+                    Section("블렌드 정보") {
+                        fieldRow("블렌드 이름", $viewModel.blendName, lowConfidence: viewModel.confidence < 0.5)
+                    }
+
+                    Section {
+                        if viewModel.blendComponents.isEmpty {
+                            Text("자동 감지된 컴포넌트가 없습니다. 사진을 다시 찍거나 수동 모드로 전환하세요.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(Array(viewModel.blendComponents.enumerated()), id: \.offset) { _, comp in
+                                BlendComponentRow(component: comp)
+                            }
+                        }
+                    } header: {
+                        Text("블렌드 컴포넌트")
+                    } footer: {
+                        Text("M1.2 (#2) Foundation Models 적용 후 컴포넌트 인라인 편집 추가 예정.")
+                            .font(.caption2)
+                    }
+                } else {
+                    Section("추출된 정보") {
+                        fieldRow("원두/블렌드", $viewModel.blendName, lowConfidence: viewModel.confidence < 0.5)
+                        fieldRow("산지(국가)", $viewModel.originCountry, lowConfidence: viewModel.confidence < 0.5)
+                        fieldRow("산지(지역/농장)", $viewModel.originRegion)
+                        fieldRow("품종", $viewModel.variety)
+                        fieldRow("가공", $viewModel.process)
+                    }
+                }
+
+                Section("공통") {
                     fieldRow("로스팅", $viewModel.roastLevel)
                     fieldRow("테이스팅 노트", $viewModel.tastingNotesText)
                     fieldRow("카페", $viewModel.cafeName)
@@ -91,6 +131,8 @@ struct ParseReviewView: View {
                         Label("Vision OCR 원문 (디버그)", systemImage: "text.viewfinder")
                             .font(.subheadline)
                     }
+                } header: {
+                    EmptyView()
                 } footer: {
                     Text("OCR이 텍스트를 잘 잡았는데 폼이 비어 있다면, 파서(현재 Mock — #2에서 Foundation Models로 교체)가 원인입니다.")
                         .font(.caption2)
@@ -116,6 +158,16 @@ struct ParseReviewView: View {
         return false
     }
 
+    private var autoDetectedHint: String {
+        if viewModel.blendComponents.count >= 2 {
+            return "블렌드 자동 감지됨 (컴포넌트 \(viewModel.blendComponents.count)개). 토글로 변경 가능."
+        }
+        if !viewModel.blendName.isEmpty {
+            return "블렌드 이름 감지됨. 토글로 변경 가능."
+        }
+        return "단일 원두로 감지됨. 토글로 변경 가능."
+    }
+
     @ViewBuilder
     private func fieldRow(_ title: String, _ binding: Binding<String>, lowConfidence: Bool = false) -> some View {
         HStack(alignment: .top) {
@@ -125,5 +177,35 @@ struct ParseReviewView: View {
             TextField(title, text: binding)
                 .foregroundStyle(lowConfidence && !binding.wrappedValue.isEmpty ? .orange : .primary)
         }
+    }
+}
+
+private struct BlendComponentRow: View {
+    let component: ParsedBlendComponent
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(component.country)
+                    .font(.subheadline.weight(.medium))
+                Spacer()
+                if let ratio = component.ratio {
+                    Text("\(ratio)%")
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.tint)
+                }
+            }
+            HStack(spacing: 8) {
+                if let variety = component.variety {
+                    Label(variety, systemImage: "leaf")
+                }
+                if let process = component.process {
+                    Label(process, systemImage: "drop")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
     }
 }
