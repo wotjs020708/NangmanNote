@@ -31,16 +31,34 @@ struct CardDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showingFrontEditor = true
+                Menu {
+                    Button {
+                        showingFrontEditor = true
+                    } label: {
+                        Label("앞면 꾸미기", systemImage: "paintbrush.pointed")
+                    }
+                    if let shareImage {
+                        ShareLink(
+                            item: shareImage,
+                            preview: SharePreview(card.displayName, image: shareImage)
+                        ) {
+                            Label("카드 공유", systemImage: "square.and.arrow.up")
+                        }
+                    }
                 } label: {
-                    Label("앞면 꾸미기", systemImage: "paintbrush.pointed")
+                    Image(systemName: "ellipsis.circle")
+                        .font(.title3)
                 }
             }
         }
         .sheet(isPresented: $showingFrontEditor) {
             FrontEditorView(card: card)
         }
+    }
+
+    private var shareImage: Image? {
+        guard let ui = CardImageRenderer.renderFrontAndBack(card: card) else { return nil }
+        return Image(uiImage: ui)
     }
 
     private var ratingRow: some View {
