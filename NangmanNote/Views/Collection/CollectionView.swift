@@ -20,7 +20,10 @@ struct CollectionView: View {
                             spacing: 12
                         ) {
                             ForEach(store.cards) { card in
-                                CardCellView(card: card)
+                                NavigationLink(value: card) {
+                                    CardCellView(card: card)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding()
@@ -38,6 +41,9 @@ struct CollectionView: View {
                     }
                     .accessibilityLabel("카드 추가")
                 }
+            }
+            .navigationDestination(for: CoffeeCard.self) { card in
+                CardDetailView(card: card)
             }
             .sheet(isPresented: $showingModeSelect) {
                 ModeSelectView()
