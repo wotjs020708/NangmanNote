@@ -3,8 +3,10 @@ import SwiftData
 
 struct CardDetailView: View {
     @Bindable var card: CoffeeCard
+    @Environment(CardStore.self) private var store
     @State private var showingFront = false  // 첫 진입: 뒷면(AI 정보) 표시
     @State private var showingFrontEditor = false
+    @State private var preselectedNote: String?
 
     var body: some View {
         ScrollView {
@@ -12,7 +14,9 @@ struct CardDetailView: View {
                 FlipContainer(showingFront: $showingFront) {
                     FrontCardView(card: card)
                 } back: {
-                    BackCardView(card: card)
+                    BackCardView(card: card) { note in
+                        preselectedNote = note
+                    }
                 }
                 .aspectRatio(0.72, contentMode: .fit)
                 .padding(.horizontal)
@@ -54,6 +58,28 @@ struct CardDetailView: View {
         .sheet(isPresented: $showingFrontEditor) {
             FrontEditorView(card: card)
         }
+        .sheet(item: Binding(
+            get: { preselectedNote.map(NoteFilter.init) },
+            set: { preselectedNote = $0?.note }
+        )) { filter in
+            NavigationStack {
+                SearchView(viewModel: {
+                    let vm = SearchViewModel(store: store)
+                    vm.selectedNotes = [filter.note]
+                    return vm
+                }())
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("닫기") { preselectedNote = nil }
+                    }
+                }
+            }
+        }
+    }
+
+    private struct NoteFilter: Identifiable {
+        let note: String
+        var id: String { note }
     }
 
     private var shareImage: Image? {
