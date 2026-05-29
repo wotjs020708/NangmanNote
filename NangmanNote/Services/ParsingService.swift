@@ -16,21 +16,25 @@ enum ParsingError: Error, LocalizedError {
     }
 }
 
-/// M1.2 (#2)에서 Foundation Models 기반으로 교체. 현재는 패턴 매칭 강화 Mock.
+/// Foundation Models (iOS 26+) 우선 사용, 실패 시 패턴 매칭 fallback.
 @Observable
 @MainActor
 final class ParsingService: ParsingServicing {
     private(set) var isParsing = false
     private(set) var lastError: ParsingError?
+    private(set) var usedFallback = false
 
-    init() {}
+    private let fmParser: FoundationModelsParser
+
+    init(fmParser: FoundationModelsParser = FoundationModelsParser()) {
+        self.fmParser = fmParser
+    }
 
     func parse(ocrText: String) async throws -> ParsedCupNoteCard {
         isParsing = true
         defer { isParsing = false }
         lastError = nil
-
-        try? await Task.sleep(nanoseconds: 500_000_000)
+        usedFallback = false
 
         let trimmed = ocrText.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
@@ -38,7 +42,36 @@ final class ParsingService: ParsingServicing {
             throw ParsingError.empty
         }
 
-        return Self.parseHeuristic(trimmed)
+        // 1) Foundation Models 우선 시도
+        do {
+            Logger.parsing.info("Trying Foundation Models…")
+            let result = try await fmParser.parse(ocrText: trimmed)
+            Logger.parsing.info("Foundation Models OK — blendName=\(result.blendName ?? "nil", privacy: .public), components=\(result.blendComponents.count, privacy: .public), notes=\(result.tastingNotes.count, privacy: .public)")
+            return mergeWithHeuristic(fmResult: result, ocrText: trimmed)
+        } catch {
+            Logger.parsing.error("Foundation Models failed (\(error.localizedDescription, privacy: .public)) — falling back to pattern matching")
+            usedFallback = true
+            lastError = (error as? ParsingError) ?? .decodingFailed
+            return Self.parseHeuristic(trimmed)
+        }
+    }
+
+    /// FM 결과를 기본으로, 비어있는 핵심 필드는 정규식 결과로 보강.
+    /// LLM이 컴포넌트나 노트를 놓치는 경우를 정규식이 잡아줌.
+    private func mergeWithHeuristic(fmResult: ParsedCupNoteCard, ocrText: String) -> ParsedCupNoteCard {
+        let heuristic = Self.parseHeuristic(ocrText)
+
+        return ParsedCupNoteCard(
+            blendName: fmResult.blendName ?? heuristic.blendName,
+            originCountry: fmResult.originCountry ?? heuristic.originCountry,
+            originRegion: fmResult.originRegion ?? heuristic.originRegion,
+            variety: fmResult.variety ?? heuristic.variety,
+            process: fmResult.process ?? heuristic.process,
+            roastLevel: fmResult.roastLevel ?? heuristic.roastLevel,
+            tastingNotes: fmResult.tastingNotes.isEmpty ? heuristic.tastingNotes : fmResult.tastingNotes,
+            cafeName: fmResult.cafeName ?? heuristic.cafeName,
+            blendComponents: fmResult.blendComponents.isEmpty ? heuristic.blendComponents : fmResult.blendComponents
+        )
     }
 
     /// 패턴 매칭으로 카드 정보 추출. 실제 Foundation Models 교체 전까지 사용.

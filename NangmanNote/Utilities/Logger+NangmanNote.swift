@@ -2,10 +2,10 @@ import Foundation
 import OSLog
 
 extension Logger {
-    private static let appSubsystem = Bundle.main.bundleIdentifier ?? "com.nangman.note"
+    private static let appSubsystem = "com.jaesuneo.NangmanNote"
 
-    static let parsing = Logger(subsystem: Self.appSubsystem, category: "parsing")
-    static let ocr = Logger(subsystem: Self.appSubsystem, category: "ocr")
-    static let cardStore = Logger(subsystem: Self.appSubsystem, category: "cardStore")
-    static let ui = Logger(subsystem: Self.appSubsystem, category: "ui")
+    nonisolated static let parsing = Logger(subsystem: appSubsystem, category: "parsing")
+    nonisolated static let ocr = Logger(subsystem: appSubsystem, category: "ocr")
+    nonisolated static let cardStore = Logger(subsystem: appSubsystem, category: "cardStore")
+    nonisolated static let ui = Logger(subsystem: appSubsystem, category: "ui")
 }
